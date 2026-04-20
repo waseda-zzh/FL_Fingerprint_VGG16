@@ -1,14 +1,62 @@
-# FL Blackbox Watermark - Drift Analysis (双语说明 / Bilingual README)
-
+# FL Blackbox Watermark - Training and Drift Analysis
 ## 中文说明
 
 ### 功能概述
 
-本仓库当前提供一个用于分析联邦学习上传模型漂移的脚本：
+本仓库包含两部分核心能力：
 
-- 脚本：`scripts/analyze_client_upload_drift.py`
-- 目标：统计每个客户端在相邻轮次上传参数之间的变化，并输出多种 CSV 报表
-- 特点：流式处理，避免一次性将整条时间链全部加载进内存
+- 模型训练（FedAvg）：`scripts/train_fl_fedavg.py`
+- 数据下载（Tiny ImageNet）：`scripts/download_tiny_imagenet.py`
+- 漂移分析：`scripts/analyze_client_upload_drift.py`
+
+---
+
+### 联邦训练（FedAvg）
+
+#### 训练任务
+
+- 模型：默认 `vgg16_bn`
+- 数据：`tiny_imagenet`（也支持 `imagenet_full`）
+- 联邦策略：FedAvg，Dirichlet 非 IID 划分
+- 评估：可按轮计算 Top-1 / Top-5
+
+#### 主要配置文件
+
+- 常规实验：`configs/fl_imagenet_vgg16.yaml`
+
+#### 训练命令示例
+
+先下载 Tiny ImageNet（可选）：
+
+```bash
+python3 scripts/download_tiny_imagenet.py
+```
+
+运行完整配置：
+
+```bash
+python3 scripts/train_fl_fedavg.py --config configs/fl_imagenet_vgg16.yaml --device cuda
+```
+
+#### 训练阶段主要产物
+
+- 分区缓存：`artifacts/partition_*.json`
+- 训练指标：`artifacts/metrics/training_curves.csv`、`artifacts/metrics/training_curves.jsonl`
+- 客户端上传快照：`artifacts/client_uploads/client_XXX/round_RRRR/upload_UU/{state_dict.pt,meta.json}`
+- （可选）检查点：`artifacts/checkpoints/`
+
+#### 常用训练配置项
+
+- `federation.num_clients` / `federation.clients_per_round` / `federation.global_rounds`
+- `federation.dirichlet_alpha`（越小越非 IID）
+- `train.local_epochs` / `train.batch_size` / `train.lr`
+- `eval.enabled` / `eval.interval_rounds`
+- `client_uploads.enabled`（开启后才会生成漂移分析输入）
+- `metrics.enabled`
+
+---
+
+### 漂移分析（client uploads）
 
 ### 输入目录结构
 
@@ -97,11 +145,68 @@ python3 scripts/analyze_client_upload_drift.py /path/to/client_uploads \
 
 ### Overview
 
-This repository currently provides a drift analysis script for federated client uploads:
+This repository has two core parts:
 
-- Script: `scripts/analyze_client_upload_drift.py`
-- Goal: measure per-client model drift between adjacent rounds and export CSV reports
-- Key feature: streaming implementation to reduce peak memory usage
+- FL training (FedAvg): `scripts/train_fl_fedavg.py`
+- Tiny ImageNet downloader: `scripts/download_tiny_imagenet.py`
+- Drift analysis: `scripts/analyze_client_upload_drift.py`
+
+---
+
+### Federated Training (FedAvg)
+
+#### Training Setup
+
+- Model: `vgg16_bn` by default
+- Data: `tiny_imagenet` (also supports `imagenet_full`)
+- Federation: FedAvg with Dirichlet non-IID partitioning
+- Evaluation: optional Top-1 / Top-5 evaluation per round
+
+#### Main Config Files
+
+- Regular experiment: `configs/fl_imagenet_vgg16.yaml`
+- Smoke test: `configs/fl_smoke_tiny.yaml`
+
+#### Training Commands
+
+Download Tiny ImageNet (optional):
+
+```bash
+python3 scripts/download_tiny_imagenet.py
+```
+
+Run smoke test (1 round):
+
+```bash
+python3 scripts/train_fl_fedavg.py --config configs/fl_smoke_tiny.yaml --device auto
+```
+
+Run the full config:
+
+```bash
+python3 scripts/train_fl_fedavg.py --config configs/fl_imagenet_vgg16.yaml --device cuda
+```
+
+#### Training Artifacts
+
+- Partition cache: `artifacts/partition_*.json`
+- Metrics: `artifacts/metrics/training_curves.csv`, `artifacts/metrics/training_curves.jsonl`
+- Client uploads: `artifacts/client_uploads/client_XXX/round_RRRR/upload_UU/{state_dict.pt,meta.json}`
+- (Optional) checkpoints: `artifacts/checkpoints/`
+
+#### Key Training Configs
+
+- `federation.num_clients`, `federation.clients_per_round`, `federation.global_rounds`
+- `federation.dirichlet_alpha` (smaller means more heterogeneous)
+- `train.local_epochs`, `train.batch_size`, `train.lr`
+- `train.max_batches_per_client` (useful for smoke runs)
+- `eval.enabled`, `eval.interval_rounds`
+- `client_uploads.enabled` (must be enabled to generate drift inputs)
+- `metrics.enabled`
+
+---
+
+### Drift Analysis (client uploads)
 
 ### Expected Input Layout
 
