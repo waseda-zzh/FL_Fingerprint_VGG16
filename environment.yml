@@ -1,0 +1,24 @@
+# Conda env: fl_blackbox (GPU PyTorch via official CUDA wheels)
+# Create: conda env create -f environment.yml
+# Update: conda env update -n fl_blackbox -f environment.yml --prune
+# Activate: conda activate fl_blackbox
+#
+# PyTorch CUDA wheels bundle their own CUDA user-mode libraries; they do not use conda
+# `pytorch-cuda` metapackages (which previously conflicted with `pytorch-mutex=cpu`).
+#
+# If you need a different CUDA wheel line, change the index URL and the +cu124 build tags:
+# https://pytorch.org/get-started/locally/
+name: fl_blackbox
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pillow
+  - pyyaml
+  - tqdm
+  - pip
+  - pip:
+    - --index-url https://download.pytorch.org/whl/cu124
+    - torch==2.5.1+cu124
+    - torchvision==0.20.1+cu124

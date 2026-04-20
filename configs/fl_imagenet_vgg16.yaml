@@ -1,0 +1,70 @@
+# Federated VGG16 image classification — all experiment knobs live here.
+# Tiny ImageNet (default): download http://cs231n.stanford.edu/tiny-imagenet-200.zip
+# and unzip so data.root points at the folder containing train/ and val/.
+
+seed: 42
+
+data:
+  # tiny_imagenet | imagenet_full
+  mode: tiny_imagenet
+  # Path to tiny-imagenet-200 root OR ImageNet root (full: must contain train/ with synset folders)
+  root: /data/hdd/zhihe/FL_blackbox_watermark/tiny-imagenet-200
+  train_subdir: train
+  val_subdir: val
+  download_url: http://cs231n.stanford.edu/tiny-imagenet-200.zip
+
+federation:
+  num_clients: 20
+  # Non-IID strength: smaller => more skewed label distribution across clients (stronger heterogeneity)
+  dirichlet_alpha: 0.5
+  partition_seed: 42
+  partition_cache_path: null
+  global_rounds: 100
+  local_epochs: 1
+  clients_per_round: 10
+  # random_uniform: each round sample m clients uniformly with replacement (standard cross-device FL sim)
+  client_sampling: random_uniform
+  shuffle_client_order: true
+
+train:
+  input_size: 224
+  use_random_resized_crop: true
+  batch_size: 16
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 1.0e-4
+  num_workers: 4
+  use_amp: true
+  # null = train on all batches each local epoch (slow on CPU)
+  max_batches_per_client: null
+
+model:
+  name: vgg16_bn
+  num_classes: 200
+  pretrained_weights: null
+
+eval:
+  enabled: true
+  interval_rounds: 1
+  batch_size: 32
+  max_batches: null
+
+log:
+  interval_batches: 10
+
+checkpoint:
+  dir: ./artifacts/checkpoints
+  save_every_rounds: 0
+
+# Save each client's FedAvg upload (post-local-train weights) every round.
+# Layout: client_uploads.dir/client_XXX/round_RRRR/upload_UU/{state_dict.pt,meta.json}
+client_uploads:
+  enabled: true
+  dir: ./artifacts/client_uploads
+
+# Per-round loss (weighted) + val accuracy; jsonl has per-client local losses too.
+metrics:
+  enabled: true
+  dir: ./artifacts/metrics
+  jsonl_filename: training_curves.jsonl
+  csv_filename: training_curves.csv

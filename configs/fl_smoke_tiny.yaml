@@ -1,0 +1,61 @@
+# Smoke test (short run): same schema as fl_imagenet_vgg16.yaml.
+# GPU: `python scripts/train_fl_fedavg.py --config configs/fl_smoke_tiny.yaml --device cuda`
+
+seed: 42
+
+data:
+  mode: tiny_imagenet
+  root: ./data/tiny-imagenet-200
+  train_subdir: train
+  val_subdir: val
+  download_url: http://cs231n.stanford.edu/tiny-imagenet-200.zip
+
+federation:
+  num_clients: 4
+  dirichlet_alpha: 0.5
+  partition_seed: 42
+  partition_cache_path: null
+  global_rounds: 1
+  local_epochs: 1
+  clients_per_round: 2
+  client_sampling: random_uniform
+  shuffle_client_order: true
+
+train:
+  input_size: 224
+  use_random_resized_crop: true
+  batch_size: 64
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 1.0e-4
+  num_workers: 4
+  use_amp: true
+  max_batches_per_client: 5
+
+model:
+  name: vgg16_bn
+  num_classes: 200
+  pretrained_weights: null
+
+eval:
+  enabled: true
+  interval_rounds: 1
+  batch_size: 64
+  max_batches: 5
+
+log:
+  interval_batches: 50
+
+checkpoint:
+  dir: ./artifacts/checkpoints
+  save_every_rounds: 0
+
+client_uploads:
+  enabled: true
+  dir: ./artifacts/client_uploads
+
+metrics:
+  enabled: true
+  dir: ./artifacts/metrics
+  jsonl_filename: training_curves.jsonl
+  csv_filename: training_curves.csv
